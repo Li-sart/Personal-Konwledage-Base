@@ -45,7 +45,7 @@ app.post('/chat', async (req, res) => {
             model: 'deepseek-v4-flash',
             messages: [
                 {
-                    role: 'system',
+                    role: 'assistant',
                     content:
                         '当用户输入的是表达式，则输出：表达式 = 结果，禁止输出任何英文解释或多余文字。如果用户输入的是其他问题，则正常回答。',
                 },

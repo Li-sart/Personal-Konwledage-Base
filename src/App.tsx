@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from "react";
-import ReactMarkdown from "react-markdown";
-import { Bubble, Actions } from "@ant-design/x";
-import { Avatar, Flex } from "antd";
-import { Think } from "@ant-design/x";
-import { Sidebar } from "./components/Sidebar";
-import type { Session, Message } from "./types/session";
-import * as sessionService from "./services/sessionService";
+import { useState, useEffect, useRef } from 'react';
+import { Bubble, Actions } from '@ant-design/x';
+import { Avatar, Flex } from 'antd';
+import { Think } from '@ant-design/x';
+import { Sidebar } from './components/Sidebar';
+import { MarkdownContent } from './components/MarkdownContent';
+import type { Session, Message } from './types/session';
+import * as sessionService from './services/sessionService';
+import styles from './App.module.less';
 
 // 复制功能
 const actionItems = (content: string) => [
@@ -212,7 +213,7 @@ function Chat() {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh' }}>
+    <div className={styles.chatLayout}>
       <Sidebar
         sessions={sessions}
         currentSessionId={currentSessionId}
@@ -223,73 +224,102 @@ function Chat() {
         collapsed={sidebarCollapsed}
         onToggleCollapse={toggleSidebar}
       />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderLeft: '1px solid #e5e5e5' }}>
-        <h2 style={{ padding: '16px 20px', fontSize: '18px', fontWeight: 500, color: '#1f1f1f' }}>AI聊天</h2>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }}>
-          {currentMessages.map((item, index) => (
-            <div key={index}>
-              <Flex vertical gap="small">
-                <Flex gap="small" wrap>
-                  <div style={{ width: "100%" }}>
-                    {item.role === "assistant" && (
-                      <div>
-                        {item.loading && item.content === "" && (
-                          <Think title="正在思考中..." blink loading />
-                        )}
-                        <Bubble
-                          content={
-                            <ReactMarkdown>{item.content}</ReactMarkdown>
-                          }
-                          header="AI助手"
-                          avatar={<Avatar src="/src/assets/AImessage.jpeg" />}
-                          footer={() => (
-                            <Actions items={actionItems(item.content)} />
-                          )}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </Flex>
-                <Flex gap="small" wrap>
-                  <div style={{ width: "100%", marginBottom: "30px" }}>
-                    {item.role === "user" && (
-                      <Bubble
-                        content={item.content}
-                        placement="end"
-                        header="用户"
-                        avatar={<Avatar src="/src/assets/user.jpeg" />}
-                      />
-                    )}
-                  </div>
-                </Flex>
-              </Flex>
+      <div className={styles.chatMain}>
+        <h2 className={styles.chatHeader}>AI聊天</h2>
+        <div className={styles.chatContent}>
+          {/* 空会话时显示居中欢迎界面 */}
+          {currentMessages.length === 0 ? (
+            <div className={styles.welcomeContainer}>
+              <h1 className={styles.welcomeTitle}>
+                今天准备学些什么？
+              </h1>
+              <div className={styles.welcomeInputWrapper}>
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSend();
+                  }}
+                  placeholder="发送消息..."
+                  className={styles.welcomeInput}
+                />
+                <button
+                  onClick={handleSend}
+                  className={styles.welcomeSendBtn}
+                >
+                  发送
+                </button>
+              </div>
             </div>
-          ))}
-          <div ref={bottomRef} />
+          ) : (
+            <>
+              {currentMessages.map((item, index) => (
+                <div key={index}>
+                  <Flex vertical gap="small">
+                    <Flex gap="small" wrap>
+                      <div className={styles.messageFullWidth}>
+                        {item.role === "assistant" && (
+                          <div>
+                            {item.loading && item.content === "" && (
+                              <Think title="正在思考中..." blink loading />
+                            )}
+                            <Bubble
+                              content={<MarkdownContent content={item.content} loading={item.loading} />}
+                              header="AI助手"
+                              avatar={<Avatar src="/src/assets/AImessage.jpeg" />}
+                              footer={() => (
+                                <Actions items={actionItems(item.content)} />
+                              )}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </Flex>
+                    <Flex gap="small" wrap>
+                      <div className={styles.messageWrapper}>
+                        {item.role === "user" && (
+                          <Bubble
+                            content={item.content}
+                            placement="end"
+                            header="用户"
+                            avatar={<Avatar src="/src/assets/user.jpeg" />}
+                          />
+                        )}
+                      </div>
+                    </Flex>
+                  </Flex>
+                </div>
+              ))}
+              <div ref={bottomRef} className={styles.bottomRef} />
+            </>
+          )}
         </div>
-        <div style={{ padding: '16px 20px', borderTop: '1px solid #e5e5e5', display: 'flex', gap: '10px' }}>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSend();
-            }}
-            placeholder="发送消息..."
-            style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', border: '1px solid #d9d9d9', fontSize: '14px', outline: 'none' }}
-          />
-          <button
-            onClick={handleSend}
-            style={{ padding: '10px 20px', background: '#1890ff', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}
-          >
-            发送
-          </button>
-          <button
-            onClick={clearHistory}
-            style={{ padding: '10px 16px', background: '#f5f5f5', color: '#666', border: '1px solid #d9d9d9', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}
-          >
-            清空
-          </button>
-        </div>
+        {/* 有消息时输入框显示在底部 */}
+        {currentMessages.length > 0 && (
+          <div className={styles.inputArea}>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSend();
+              }}
+              placeholder="发送消息..."
+              className={styles.inputField}
+            />
+            <button
+              onClick={handleSend}
+              className={styles.sendBtn}
+            >
+              发送
+            </button>
+            <button
+              onClick={clearHistory}
+              className={styles.clearBtn}
+            >
+              清空
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
